@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LOWIQ Image Editor</title>
+</head>
+<body>
+  <h1>LOWIQ Cartoon Generator</h1>
+  <form id="upload-form">
+    <input type="file" id="image-input" name="image" accept="image/png" required />
+    <button type="submit">Generate</button>
+  </form>
+  <p id="status"></p>
+  <img id="result-image" style="max-width: 512px; display: none;" />
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const status = document.getElementById('status');
+    const resultImage = document.getElementById('result-image');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.textContent = 'Uploading...';
+      resultImage.style.display = 'none';
+
+      const fileInput = document.getElementById('image-input');
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+
+      try {
+        // Step 1: Upload to Supabase manually
+        const uploadRes = await fetch('https://bkvgmmxrcldjoofqmprk.supabase.co/storage/v1/object/public/lowiq-storage/uploads', {
+          method: 'POST',
+          headers: {
+            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmdtbXhyY2xkam9vZnFtcHJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyODQsImV4cCI6MjA2NjU5MDI4NH0.GyqJtfyEUu3FXDP41u3hMH59zbr9UEhuXZUKhaeTU-w"
+          },
+          body: formData
+        });
+
+        const filename = `${Date.now()}_${fileInput.files[0].name}`;
+        const publicUrl = `https://bkvgmmxrcldjoofqmprk.supabase.co/storage/v1/object/public/lowiq-storage/uploads/${filename}`;
+
+        status.textContent = 'Generating image...';
+
+        // Step 2: Call local API to generate
+        const generateRes = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: publicUrl })
+        });
+        const generateData = await generateRes.json();
+        if (!generateRes.ok) throw new Error(generateData.error);
+
+        status.textContent = 'Done!';
+        resultImage.src = generateData.resultUrl;
+        resultImage.style.display = 'block';
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

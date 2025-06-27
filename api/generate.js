@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   const { imageUrl } = req.body;
 
-  const prompt = "Slightly enlarge the head for a cartoonish look, while preserving facial structure.
+  const prompt = `Slightly enlarge the head for a cartoonish look, while preserving facial structure.
 
 Add crossed, unfocused cartoon eyes with visible white space, keeping original eye size and orientation.
 
@@ -22,7 +22,7 @@ Add a sketchy “LOWIQ” badge to the subject’s clothing.
 
 Use flat pastel or garish colors, no shading, wobbly cartoon lines.
 
-Do not change clothing, body, background, or pose.";
+Do not change clothing, body, background, or pose.`;
 
   if (!imageUrl) {
     return res.status(400).json({ error: "Missing imageUrl" });

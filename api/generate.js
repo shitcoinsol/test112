@@ -42,10 +42,11 @@ Do not change clothing, body, background, or pose.`;
     });
     formData.append("prompt", prompt);
     formData.append("n", "1");
-    formData.append("size", "512x512");
+    formData.append("size", "1024x1024");
     formData.append("quality", "high");
-    formData.append("response_format", "url");
     formData.append("output_format", "png");
+    formData.append("response_format", "b64_json");
+    formData.append("model", "gpt-image-1");
 
     const openaiRes = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
@@ -62,7 +63,7 @@ Do not change clothing, body, background, or pose.`;
       return res.status(500).json({ error: result.error?.message || "OpenAI failed" });
     }
 
-    return res.status(200).json({ resultUrl: result.data[0].url });
+    return res.status(200).json({ resultUrl: result.data[0].b64_json });
   } catch (err) {
     return res.status(500).json({ error: err.message || "Server error" });
   }

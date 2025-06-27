@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>LOWIQ Generator Debug</title>
+  <title>LOWIQ Generator</title>
 </head>
 <body>
-  <h1>LOWIQ Cartoon Generator (Debug Mode)</h1>
+  <h1>LOWIQ Cartoon Generator</h1>
   <form id="upload-form">
     <input type="file" id="image-input" name="image" accept="image/png" required />
     <button type="submit">Generate</button>
@@ -33,7 +33,6 @@
       });
       if (error) throw error;
       const publicUrl = `https://bkvgmmxrcldjoofqmprk.supabase.co/storage/v1/object/public/uploads/${fileName}`;
-      console.log("✅ Supabase Upload Complete:", publicUrl);
       return publicUrl;
     }
 
@@ -42,42 +41,28 @@
       status.textContent = 'Uploading...';
       resultImage.style.display = 'none';
 
-      const fileInput = document.getElementById('image-input');
-      const file = fileInput.files[0];
-      if (!file) {
-        alert("Please select a file.");
-        return;
-      }
+      const file = document.getElementById('image-input').files[0];
+      if (!file) return alert("No file selected");
 
       try {
         const imageUrl = await uploadToSupabase(file);
-        console.log("📤 Calling /api/generate with imageUrl:", imageUrl);
         status.textContent = 'Generating image...';
 
-        const generateRes = await fetch('/api/generate', {
+        const res = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageUrl })
         });
 
-        let generateData;
-        try {
-          generateData = await generateRes.json();
-        } catch (e) {
-          const raw = await generateRes.text();
-          throw new Error("❌ Invalid JSON from API:
-" + raw);
-        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Unknown error");
 
-        if (!generateRes.ok) throw new Error(generateData.error || "Unknown error");
-
-        console.log("✅ Generated Image URL:", generateData.resultUrl);
-        status.textContent = 'Done!';
-        resultImage.src = generateData.resultUrl;
+        resultImage.src = data.resultUrl;
         resultImage.style.display = 'block';
+        status.textContent = 'Done!';
       } catch (err) {
-        console.error("🔥 Error:", err.message);
-        status.textContent = "Error: " + err.message;
+        status.textContent = 'Error: ' + err.message;
+        console.error(err);
       }
     });
   </script>

@@ -1,24 +1,38 @@
 import { FormData, fileFrom } from 'undici';
+import { Buffer } from 'node:buffer';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   const { imageUrl } = req.body;
 
-  const prompt = "Transform only the face and head of the person in the image into a lighthearted cartoon parody, keeping facial features (eyes, nose, mouth, skin tone, head shape) close to the original. Slightly enlarge the head for a comical cartoon look while keeping structure. Add crossed, playful cartoon eyes with visible white space, matching the original size and direction. Overlay a silly open mouth with blue cartoon drool, without altering the real mouth shape. Preserve original skin tone exact...
+  const prompt = "Slightly enlarge the head for a cartoonish look, while preserving facial structure.
+
+Add crossed, unfocused cartoon eyes with visible white space, keeping original eye size and orientation.
+
+Overlay an open mouth with a silly expression and blue drool, without changing the actual mouth shape.
+
+Keep hair, ears, eyebrows structure intact—just redraw in a hand-drawn cartoon style.
+
+if dont have ears, dont add ears.
+
+Preserve skin tone exactly from the image.
+
+Add a sketchy “LOWIQ” badge to the subject’s clothing.
+
+Use flat pastel or garish colors, no shading, wobbly cartoon lines.
+
+Do not change clothing, body, background, or pose.";
 
   if (!imageUrl) {
     return res.status(400).json({ error: "Missing imageUrl" });
   }
 
   try {
-    console.log("📥 Fetching image from Supabase URL:", imageUrl);
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) throw new Error("Failed to fetch image from Supabase");
 
     const imageArrayBuffer = await imageResponse.arrayBuffer();
-    console.log("📏 Image size:", imageArrayBuffer.byteLength, "bytes");
-
     const imageFile = await fileFrom(Buffer.from(imageArrayBuffer), "image.png", { type: "image/png" });
 
     const formData = new FormData();
@@ -30,7 +44,6 @@ export default async function handler(req, res) {
     formData.set("response_format", "url");
     formData.set("output_format", "png");
 
-    console.log("🚀 Sending request to OpenAI...");
     const openaiRes = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
       headers: {
@@ -44,19 +57,15 @@ export default async function handler(req, res) {
       result = await openaiRes.json();
     } catch (e) {
       const raw = await openaiRes.text();
-      console.error("❌ OpenAI returned non-JSON:", raw);
       return res.status(500).json({ error: "OpenAI non-JSON", raw });
     }
 
     if (!openaiRes.ok) {
-      console.error("❌ OpenAI API error:", result);
       return res.status(500).json({ error: result.error?.message || "OpenAI failed" });
     }
 
-    console.log("✅ OpenAI image result URL:", result.data[0].url);
     return res.status(200).json({ resultUrl: result.data[0].url });
   } catch (err) {
-    console.error("🔥 Server-side error:", err.message);
-    res.status(500).json({ error: err.message || "Server error" });
+    return res.status(500).json({ error: err.message || "Server error" });
   }
 }

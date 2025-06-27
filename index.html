@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>LOWIQ Image Editor</title>
+  <meta charset="UTF-8" />
+  <title>LOWIQ Generator (Fixed)</title>
 </head>
 <body>
   <h1>LOWIQ Cartoon Generator</h1>
@@ -13,10 +13,27 @@
   <p id="status"></p>
   <img id="result-image" style="max-width: 512px; display: none;" />
 
-  <script>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const supabase = createClient(
+      "https://bkvgmmxrcldjoofqmprk.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmdtbXhyY2xkam9vZnFtcHJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyODQsImV4cCI6MjA2NjU5MDI4NH0.GyqJtfyEUu3FXDP41u3hMH59zbr9UEhuXZUKhaeTU-w"
+    );
+
     const form = document.getElementById('upload-form');
     const status = document.getElementById('status');
     const resultImage = document.getElementById('result-image');
+
+    async function uploadToSupabase(file) {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from("uploads").upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false
+      });
+      if (error) throw error;
+      return `https://bkvgmmxrcldjoofqmprk.supabase.co/storage/v1/object/public/uploads/${fileName}`;
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -24,29 +41,19 @@
       resultImage.style.display = 'none';
 
       const fileInput = document.getElementById('image-input');
-      const formData = new FormData();
-      formData.append('image', fileInput.files[0]);
+      const file = fileInput.files[0];
+      if (!file) return;
 
       try {
-        // Step 1: Upload to Supabase manually
-        const uploadRes = await fetch('https://bkvgmmxrcldjoofqmprk.supabase.co/storage/v1/object/public/lowiq-storage/uploads', {
-          method: 'POST',
-          headers: {
-            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdmdtbXhyY2xkam9vZnFtcHJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMTQyODQsImV4cCI6MjA2NjU5MDI4NH0.GyqJtfyEUu3FXDP41u3hMH59zbr9UEhuXZUKhaeTU-w"
-          },
-          body: formData
-        });
-
-        const filename = `${Date.now()}_${fileInput.files[0].name}`;
-        const publicUrl = `https://bkvgmmxrcldjoofqmprk.supabase.co/storage/v1/object/public/lowiq-storage/uploads/${filename}`;
-
+        // Step 1: Upload to Supabase
+        const imageUrl = await uploadToSupabase(file);
         status.textContent = 'Generating image...';
 
-        // Step 2: Call local API to generate
+        // Step 2: Call generate endpoint
         const generateRes = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: publicUrl })
+          body: JSON.stringify({ imageUrl })
         });
         const generateData = await generateRes.json();
         if (!generateRes.ok) throw new Error(generateData.error);

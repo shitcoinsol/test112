@@ -12,10 +12,13 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log("📥 Fetching image from Supabase URL:", imageUrl);
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) throw new Error("Failed to fetch image from Supabase");
 
     const imageArrayBuffer = await imageResponse.arrayBuffer();
+    console.log("📏 Image size:", imageArrayBuffer.byteLength, "bytes");
+
     const imageFile = await fileFrom(Buffer.from(imageArrayBuffer), "image.png", { type: "image/png" });
 
     const formData = new FormData();
@@ -27,6 +30,7 @@ export default async function handler(req, res) {
     formData.set("response_format", "url");
     formData.set("output_format", "png");
 
+    console.log("🚀 Sending request to OpenAI...");
     const openaiRes = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
       headers: {
@@ -40,18 +44,19 @@ export default async function handler(req, res) {
       result = await openaiRes.json();
     } catch (e) {
       const raw = await openaiRes.text();
-      console.error("OpenAI non-JSON response:", raw);
-      return res.status(500).json({ error: "Invalid OpenAI response", raw });
+      console.error("❌ OpenAI returned non-JSON:", raw);
+      return res.status(500).json({ error: "OpenAI non-JSON", raw });
     }
 
     if (!openaiRes.ok) {
-      console.error("OpenAI error:", result);
+      console.error("❌ OpenAI API error:", result);
       return res.status(500).json({ error: result.error?.message || "OpenAI failed" });
     }
 
+    console.log("✅ OpenAI image result URL:", result.data[0].url);
     return res.status(200).json({ resultUrl: result.data[0].url });
   } catch (err) {
-    console.error("Server error:", err);
+    console.error("🔥 Server-side error:", err.message);
     res.status(500).json({ error: err.message || "Server error" });
   }
 }

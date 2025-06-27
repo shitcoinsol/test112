@@ -5,8 +5,7 @@ export default async function handler(req, res) {
 
   const { imageUrl } = req.body;
 
-  const prompt = `
-Transform only the face and head of the person in the image into a lighthearted cartoon parody, keeping facial features (eyes, nose, mouth, skin tone, head shape) close to the original.
+  const prompt = `Transform only the face and head of the person in the image into a lighthearted cartoon parody, keeping facial features (eyes, nose, mouth, skin tone, head shape) close to the original.
 
 Slightly enlarge the head for a comical cartoon look while keeping structure.
 
@@ -18,12 +17,11 @@ Preserve original skin tone exactly.
 
 Redraw hair, ears, eyebrows in a hand-drawn sketch style, keeping structure intact.
 
-Add a visible “LOWIQ” parody badge on clothing in a comic, sketchy style.
+Add a visible "LOWIQ" parody badge on clothing in a comic, sketchy style.
 
 Use a cartoonish style with shaky outlines, no shading, and pastel or clashing colors.
 
-Do not modify clothing, body, background, or pose
-`.trim();
+Do not modify clothing, body, background, or pose`;
 
   if (!imageUrl) {
     return res.status(400).json({ error: "Missing imageUrl" });

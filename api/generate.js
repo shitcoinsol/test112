@@ -31,6 +31,7 @@ Do not modify clothing, body, background, or pose
   }
 
   try {
+    console.log("Image URL received:", imageUrl);
     const imageRes = await fetch(imageUrl);
     if (!imageRes.ok) throw new Error("Failed to fetch image from Supabase");
 
@@ -56,15 +57,23 @@ Do not modify clothing, body, background, or pose
       body: formData,
     });
 
-    const result = await openaiRes.json();
+    let result;
+    try {
+      result = await openaiRes.json();
+    } catch (e) {
+      const raw = await openaiRes.text();
+      console.error("OpenAI non-JSON error:", raw);
+      return res.status(500).json({ error: "Invalid response from OpenAI", raw });
+    }
+
     if (!openaiRes.ok) {
-      console.error(result);
-      return res.status(500).json({ error: result.error || "OpenAI failed" });
+      console.error("OpenAI error:", result);
+      return res.status(500).json({ error: result.error?.message || "OpenAI failed" });
     }
 
     res.status(200).json({ resultUrl: result.data[0].url });
   } catch (err) {
-    console.error(err);
+    console.error("Server error:", err.message);
     res.status(500).json({ error: err.message });
   }
 }

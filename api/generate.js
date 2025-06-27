@@ -45,7 +45,6 @@ Do not change clothing, body, background, or pose.`;
     formData.append("size", "1024x1024");
     formData.append("quality", "high");
     formData.append("output_format", "png");
-    formData.append("response_format", "b64_json");
     formData.append("model", "gpt-image-1");
 
     const openaiRes = await fetch("https://api.openai.com/v1/images/edits", {

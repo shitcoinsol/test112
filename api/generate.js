@@ -1,7 +1,6 @@
-import undici from 'undici';
+import fetch from 'node-fetch';
+import FormData from 'form-data';
 import { Buffer } from 'node:buffer';
-
-const { FormData, Blob } = undici;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -34,11 +33,13 @@ Do not change clothing, body, background, or pose.`;
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) throw new Error("Failed to fetch image from Supabase");
 
-    const imageArrayBuffer = await imageResponse.arrayBuffer();
-    const blob = new Blob([imageArrayBuffer], { type: "image/png" });
+    const imageBuffer = await imageResponse.buffer();
 
     const formData = new FormData();
-    formData.append("image", blob, "image.png");
+    formData.append("image", imageBuffer, {
+      filename: "image.png",
+      contentType: "image/png",
+    });
     formData.append("prompt", prompt);
     formData.append("n", "1");
     formData.append("size", "512x512");
@@ -49,18 +50,13 @@ Do not change clothing, body, background, or pose.`;
     const openaiRes = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        ...formData.getHeaders(),
       },
-      body: formData
+      body: formData,
     });
 
-    let result;
-    try {
-      result = await openaiRes.json();
-    } catch (e) {
-      const raw = await openaiRes.text();
-      return res.status(500).json({ error: "OpenAI non-JSON", raw });
-    }
+    const result = await openaiRes.json();
 
     if (!openaiRes.ok) {
       return res.status(500).json({ error: result.error?.message || "OpenAI failed" });

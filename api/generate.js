@@ -1,5 +1,7 @@
-import { FormData, fileFrom } from 'undici';
+import undici from 'undici';
 import { Buffer } from 'node:buffer';
+
+const { FormData, fileFrom } = undici;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();

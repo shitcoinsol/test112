@@ -1,7 +1,7 @@
 import undici from 'undici';
 import { Buffer } from 'node:buffer';
 
-const { FormData, fileFrom } = undici;
+const { FormData, Blob } = undici;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -35,16 +35,16 @@ Do not change clothing, body, background, or pose.`;
     if (!imageResponse.ok) throw new Error("Failed to fetch image from Supabase");
 
     const imageArrayBuffer = await imageResponse.arrayBuffer();
-    const imageFile = await fileFrom(Buffer.from(imageArrayBuffer), "image.png", { type: "image/png" });
+    const blob = new Blob([imageArrayBuffer], { type: "image/png" });
 
     const formData = new FormData();
-    formData.set("image", imageFile);
-    formData.set("prompt", prompt);
-    formData.set("n", "1");
-    formData.set("size", "512x512");
-    formData.set("quality", "high");
-    formData.set("response_format", "url");
-    formData.set("output_format", "png");
+    formData.append("image", blob, "image.png");
+    formData.append("prompt", prompt);
+    formData.append("n", "1");
+    formData.append("size", "512x512");
+    formData.append("quality", "high");
+    formData.append("response_format", "url");
+    formData.append("output_format", "png");
 
     const openaiRes = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
